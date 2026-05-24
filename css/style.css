@@ -180,8 +180,8 @@ body {
 .main-content.no-bottom {
   padding-bottom: 16px;
 }
-/* AI ���⼤��ʱ��main-content ��Ϊ flex ���� */
-.main-content:has(#viewAiChat.active) {
+/* main-content flex column mode (JS-triggered) */
+.main-content.flex-col {
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -797,11 +797,7 @@ body {
 }
 
 /* ===== 搜索视图 ===== */
-/* 搜索/设置激活时隐藏 main-content，避免空间平分 */
-body:has(#viewSearch.active) > .main-content,
-body:has(#viewSettings.active) > .main-content {
-  display: none;
-}
+
 
 /* ===== 搜索视图激活 ===== */
 #viewSearch.active {

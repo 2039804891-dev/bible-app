@@ -135,6 +135,7 @@ function showView(viewName, pushHistory) {
   // Hide bottom bar on AI chat view
   dom.bottomBar.classList.toggle("hidden", viewName === "aiChat");
   dom.mainContent.classList.toggle("no-bottom", viewName === "aiChat");
+  dom.mainContent.classList.toggle("flex-col", viewName === "aiChat" || viewName === "search");
 
   updateTopBar();
 
@@ -163,6 +164,7 @@ function goBack() {
 
   dom.bottomBar.classList.toggle("hidden", prev.view === "aiChat");
   dom.mainContent.classList.toggle("no-bottom", prev.view === "aiChat");
+  dom.mainContent.classList.toggle("flex-col", prev.view === "aiChat" || prev.view === "search");
 
   updateTopBar();
 
