@@ -12,6 +12,9 @@ var state = {
   history: [],
   apiKey: "",
   fontSize: 1,
+  aiContextRef: "",
+  touchStartX: 0,
+  touchStartY: 0,
   aiContextRef: ""
 };
 
@@ -51,9 +54,24 @@ var dom = {
   apiKeyStatus: $("#apiKeyStatus"),
   bottomBar: $("#bottomBar"),
   bottomBooks: $("#bottomBooks"),
+  bottomBookmarks: $("#bottomBookmarks"),
   bottomHome: $("#bottomHome"),
   mainContent: $(".main-content"),
   toast: $("#toast"),
+  dailyVerse: $("#dailyVerse"),
+  streakBanner: $("#streakBanner"),
+  readingProgress: $("#readingProgress"),
+  readingActionsRow: $("#readingActionsRow"),
+  viewNotes: $("#viewNotes"),
+  viewHistory: $("#viewHistory"),
+  notesContainer: $("#notesContainer"),
+  historyContainer: $("#historyContainer"),
+  shareOverlay: $("#shareOverlay"),
+  shareVerseText: $("#shareVerseText"),
+  shareVerseRef: $("#shareVerseRef"),
+  btnShareCopy: $("#btnShareCopy"),
+  btnShareClose: $("#btnShareClose"),
+  bottomHistory: $("#bottomHistory"),
 };
 
 // ===== 初始化 =====
@@ -61,6 +79,8 @@ function init() {
   loadSettings();
   applyFontSize();
   renderBooks();
+  renderDailyVerse();
+  renderStreakBanner();
   setupEventListeners();
 }
 
@@ -100,6 +120,8 @@ function showView(viewName, pushHistory) {
   dom.viewReading.classList.toggle("active", viewName === "reading");
   dom.viewAiChat.classList.toggle("active", viewName === "aiChat");
   dom.viewSettings.classList.toggle("active", viewName === "settings");
+  dom.viewNotes.classList.toggle("active", viewName === "notes");
+  dom.viewHistory.classList.toggle("active", viewName === "history");
 
   // Hide bottom bar on AI chat view
   dom.bottomBar.classList.toggle("hidden", viewName === "aiChat");
@@ -125,6 +147,8 @@ function goBack() {
   dom.viewReading.classList.toggle("active", prev.view === "reading");
   dom.viewAiChat.classList.toggle("active", prev.view === "aiChat");
   dom.viewSettings.classList.toggle("active", prev.view === "settings");
+  dom.viewNotes.classList.toggle("active", prev.view === "notes");
+  dom.viewHistory.classList.toggle("active", prev.view === "history");
 
   dom.bottomBar.classList.toggle("hidden", prev.view === "aiChat");
   dom.mainContent.classList.toggle("no-bottom", prev.view === "aiChat");
@@ -157,6 +181,14 @@ function updateTopBar() {
   } else if (v === "aiChat") {
     dom.topTitle.textContent = "AI\u7267\u5e08\u8bb2\u89e3";
     dom.topSubtitle.textContent = state.aiContextRef || "";
+    dom.btnBack.style.visibility = "visible";
+  } else if (v === "notes") {
+    dom.topTitle.textContent = "\u7b14\u8bb0";
+    dom.topSubtitle.textContent = "";
+    dom.btnBack.style.visibility = "visible";
+  } else if (v === "history") {
+    dom.topTitle.textContent = "\u8bfb\u7ecf\u5386\u53f2";
+    dom.topSubtitle.textContent = "";
     dom.btnBack.style.visibility = "visible";
   } else if (v === "settings") {
     dom.topTitle.textContent = "\u8bbe\u7f6e";
@@ -289,6 +321,8 @@ function loadChapter(bookId, chapter) {
   if (!book) { return; }
 
   saveReadingPosition(bookId, chapter);
+  saveReadingHistory(bookId, chapter);
+  updateReadingStreak();
 
   // Load from local data/ directory first, fall back to bolls.life API
   fetch('/data/' + bookId + '.json').then(function(resp) {
@@ -376,6 +410,17 @@ function renderChapterNav(book, chapter) {
     '</button></div>';
   dom.chapterNavTop.innerHTML = navHtml + aiBtnHtml;
   dom.chapterNavBottom.innerHTML = navHtml;
+  // Update reading actions row
+  dom.readingActionsRow.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;gap:12px">' +
+    '<button class="btn-action" onclick="shareSelectedVerses()" title="分享">' +
+    '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>' +
+    '</button>' +
+    '<button class="btn-action" onclick="addNoteForVerse()" title="笔记">' +
+    '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>' +
+    '</button>' +
+    '<button class="btn-action" id="btnBookmarkSelectedReading" onclick="bookmarkSelectedVerses()" title="收藏">' +
+    '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>' +
+    '</button></div>';
 }
 
 function navigateChapter(delta) {
@@ -693,6 +738,13 @@ function setupEventListeners() {
 
   dom.btnSettings.addEventListener("click", function() { showView("settings"); });
 
+  dom.bottomBookmarks.addEventListener("click", function() {
+    clearSelection();
+    state.history = [];
+    renderBookmarks();
+    showView("bookmarks");
+  });
+
   dom.bottomBooks.addEventListener("click", function() {
     clearSelection();
     showView("books");
@@ -704,12 +756,32 @@ function setupEventListeners() {
     state.selectedChapter = null;
     state.history = [];
     showView("books");
+    renderDailyVerse();
+    renderStreakBanner();
+    renderContinueReading();
+  });
+
+  dom.bottomHistory.addEventListener("click", function() {
+    state.selectedBook = null;
+    state.selectedChapter = null;
+    state.history = [];
+    renderHistory();
+    showView("history");
   });
 
   dom.btnAiExplainSelected.addEventListener("click", explainSelectedVerses);
   dom.btnAiExplainChapter.addEventListener("click", explainChapter);
   dom.btnAiCustomQuestion.addEventListener("click", openCustomQuestion);
   dom.btnClearSelection.addEventListener("click", clearSelection);
+
+
+  dom.btnShareCopy.addEventListener("click", copySharedVerses);
+  dom.btnShareClose.addEventListener("click", function() {
+    dom.shareOverlay.classList.remove("visible");
+  });
+  dom.shareOverlay.addEventListener("click", function(e) {
+    if (e.target === dom.shareOverlay) dom.shareOverlay.classList.remove("visible");
+  });
 
   dom.btnAiSend.addEventListener("click", sendAiMessage);
   dom.aiInput.addEventListener("keydown", function(e) {
@@ -721,6 +793,12 @@ function setupEventListeners() {
 
   dom.btnSaveApiKey.addEventListener("click", saveApiKey);
 
+  // Reading progress tracking
+  document.querySelector(".main-content").addEventListener("scroll", updateReadingProgress, { passive: true });
+
+  // Swipe navigation
+  setupSwipeNavigation();
+
   $$(".btn-font-size").forEach(function(btn) {
     btn.addEventListener("click", function() {
       setFontSize(parseFloat(btn.dataset.size));
@@ -728,5 +806,307 @@ function setupEventListeners() {
   });
 }
 
+// ===== 收藏选中经文 =====
+function bookmarkSelectedVerses() {
+  if (state.selectedVerses.length === 0) {
+    showToast("请先选择经文");
+    return;
+  }
+  var bookmarks = getBookmarks();
+  state.selectedVerses.forEach(function(v) {
+    var exists = bookmarks.some(function(b) {
+      return b.book === v.book && b.chapter === v.chapter && b.verse === v.verse;
+    });
+    if (!exists) {
+      bookmarks.push({ book: v.book, chapter: v.chapter, verse: v.verse, text: v.text, time: Date.now() });
+    }
+  });
+  bookmarks.sort(function(a, b) { return b.time - a.time; });
+  localStorage.setItem("bible_bookmarks", JSON.stringify(bookmarks));
+  showToast("已收藏 " + state.selectedVerses.length + " 节经文");
+}
+
+function getBookmarks() {
+  try { return JSON.parse(localStorage.getItem("bible_bookmarks") || "[]"); }
+  catch(e) { return []; }
+}
+
 // ===== 启动 =====
 document.addEventListener("DOMContentLoaded", init);
+// ===== 每日金句 =====
+var DAILY_VERSES = [
+  { text: "神爱世人，甚至将他的独生子赐给他们，叫一切信他的，不至灭亡，反得永生。", ref: "约翰福音 3:16" },
+  { text: "你要专心仰赖耶和华，不可倚靠自己的聪明，在你一切所行的事上都要认定他，他必指引你的路。", ref: "箴言 3:5-6" },
+  { text: "我靠着那加给我力量的，凡事都能作。", ref: "腓立比书 4:13" },
+  { text: "耶和华是我的牧者，我必不至缺乏。", ref: "诗篇 23:1" },
+  { text: "凡劳苦担重担的人，可以到我这里来，我就使你们得安息。", ref: "马太福音 11:28" },
+  { text: "你们要先求他的国和他的义，这些东西都要加给你们了。", ref: "马太福音 6:33" },
+  { text: "耶和华说：我知道我向你们所怀的意念是赐平安的意念，不是降灾祸的意念，要叫你们末后有指望。", ref: "耶利米书 29:11" },
+  { text: "我们晓得万事都互相效力，叫爱神的人得益处。", ref: "罗马书 8:28" },
+  { text: "你不要害怕，因为我与你同在；不要惊惶，因为我是你的神。", ref: "以赛亚书 41:10" },
+  { text: "如今常存的有信，有望，有爱；这三样，其中最大的是爱。", ref: "哥林多前书 13:13" },
+  { text: "你的话是我脚前的灯，是我路上的光。", ref: "诗篇 119:105" },
+  { text: "但那等候耶和华的，必从新得力。他们必如鹰展翅上腾，他们奔跑却不困倦，行走却不疲乏。", ref: "以赛亚书 40:31" },
+  { text: "你们是世上的光。城造在山上，是不能隐藏的。", ref: "马太福音 5:14" },
+  { text: "你要保守你心，胜过保守一切，因为一生的果效，是由心发出。", ref: "箴言 4:23" },
+];
+
+function renderDailyVerse() {
+  var today = new Date();
+  var dayOfYear = Math.floor((today - new Date(today.getFullYear(), 0, 0)) / 86400000);
+  var verse = DAILY_VERSES[dayOfYear % DAILY_VERSES.length];
+  dom.dailyVerse.style.display = "block";
+  dom.dailyVerse.innerHTML =
+    '<div class="daily-verse-label">\u4eca\u65e5\u91d1\u53e5 ' + today.getMonth() + '/' + today.getDate() + '</div>' +
+    '<div class="daily-verse-body">' + escapeHtml(verse.text) + '</div>' +
+    '<div class="daily-verse-ref">\u2014\u2014 ' + verse.ref + '</div>';
+}
+
+// ===== 读经打卡 =====
+function renderStreakBanner() {
+  var data = getStreakData();
+  dom.streakBanner.style.display = "block";
+  dom.streakBanner.innerHTML =
+    '<div class="streak-info">' +
+    '<div class="streak-icon">\ud83d\udd25</div>' +
+    '<div>' +
+    '<div class="streak-text">\u4eca\u65e5\u5df2\u6253\u5361</div>' +
+    '<div class="streak-label">\u5df2\u8fde\u7eed\u8bfb\u7ecf <span class="streak-count">' + data.streak + '</span> \u5929</div>' +
+    '</div></div>' +
+    '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="color:var(--text-tertiary);flex-shrink:0"><polyline points="9 18 15 12 9 6"/></svg>';
+}
+
+function getStreakData() {
+  try {
+    var d = JSON.parse(localStorage.getItem("bible_streak") || '{"streak":0,"lastDate":""}');
+    return d;
+  } catch(e) { return { streak: 0, lastDate: "" }; }
+}
+
+function updateReadingStreak() {
+  var today = new Date().toISOString().slice(0, 10);
+  var data = getStreakData();
+  if (data.lastDate === today) return;
+  var yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+  if (data.lastDate === yesterday) {
+    data.streak = (data.streak || 0) + 1;
+  } else if (data.lastDate !== today) {
+    data.streak = 1;
+  }
+  data.lastDate = today;
+  localStorage.setItem("bible_streak", JSON.stringify(data));
+}
+
+// ===== 读经历史 =====
+function saveReadingHistory(bookId, chapter) {
+  var book = BIBLE_BOOKS.find(function(b) { return b.id === bookId; });
+  if (!book) return;
+  var today = new Date().toISOString().slice(0, 10);
+  try {
+    var hist = JSON.parse(localStorage.getItem("bible_history") || "[]");
+    hist = hist.filter(function(h) { return !(h.bookId === bookId && h.chapter === chapter); });
+    hist.unshift({ bookId: bookId, bookName: book.name, chapter: chapter, date: today, time: Date.now() });
+    if (hist.length > 50) hist = hist.slice(0, 50);
+    localStorage.setItem("bible_history", JSON.stringify(hist));
+  } catch(e) {}
+}
+
+function renderHistory() {
+  try {
+    var hist = JSON.parse(localStorage.getItem("bible_history") || "[]");
+  } catch(e) { hist = []; }
+  if (hist.length === 0) {
+    dom.historyContainer.innerHTML = '<div class="history-empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><p>\u8fd8\u6ca1\u6709\u8bfb\u7ecf\u8bb0\u5f55</p></div>';
+    return;
+  }
+  var html = "", lastDate = "";
+  hist.forEach(function(h) {
+    if (h.date !== lastDate) {
+      if (lastDate !== "") html += '</div>';
+      html += '<div style="margin-bottom:16px"><div style="font-size:0.75rem;font-weight:600;color:var(--text-tertiary);padding:6px 0;letter-spacing:0.04em">' + h.date + '</div>';
+      lastDate = h.date;
+    }
+    html += '<div class="history-item" data-book="' + h.bookId + '" data-chapter="' + h.chapter + '">' +
+      '<div class="history-position">\u300a' + h.bookName + '\u300b\u7b2c ' + h.chapter + ' \u7ae0</div>' +
+      '<svg class="history-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>' +
+      '</div>';
+  });
+  html += '</div>';
+  dom.historyContainer.innerHTML = html;
+  dom.historyContainer.querySelectorAll(".history-item").forEach(function(el) {
+    el.addEventListener("click", function() {
+      state.selectedBook = el.dataset.book;
+      state.selectedChapter = parseInt(el.dataset.chapter);
+      loadChapter(state.selectedBook, state.selectedChapter);
+      showView("reading");
+    });
+  });
+}
+
+// ===== 阅读进度条 =====
+function updateReadingProgress() {
+  var mc = document.querySelector(".main-content");
+  if (!mc || state.currentView !== "reading") { dom.readingProgress.style.width = "0%"; return; }
+  var scrollTop = mc.scrollTop;
+  var scrollHeight = mc.scrollHeight - mc.clientHeight;
+  if (scrollHeight <= 0) { dom.readingProgress.style.width = "0%"; return; }
+  var pct = Math.min((scrollTop / scrollHeight) * 100, 100);
+  dom.readingProgress.style.width = pct + "%";
+}
+
+// ===== 分享经文 =====
+function shareSelectedVerses() {
+  if (state.selectedVerses.length === 0) {
+    showToast("\u8bf7\u5148\u9009\u62e9\u7ecf\u6587");
+    return;
+  }
+  var book = BIBLE_BOOKS.find(function(b) { return b.id === state.selectedVerses[0].book; });
+  var bookName = book ? book.name : "";
+  var refText, fullText;
+  if (state.selectedVerses.length === 1) {
+    refText = bookName + " " + state.selectedVerses[0].chapter + ":" + state.selectedVerses[0].verse;
+    fullText = state.selectedVerses[0].text;
+  } else {
+    var first = state.selectedVerses[0];
+    var last = state.selectedVerses[state.selectedVerses.length - 1];
+    refText = bookName + " " + first.chapter + ":" + first.verse + "-" + last.verse;
+    fullText = state.selectedVerses.map(function(v) { return v.text; }).join(" ");
+  }
+  dom.shareVerseText.textContent = fullText;
+  dom.shareVerseRef.textContent = "\u2014\u2014 " + refText;
+  dom.shareOverlay.classList.add("visible");
+}
+
+function copySharedVerses() {
+  var text = dom.shareVerseText.textContent + "\n\n" + dom.shareVerseRef.textContent;
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(function() {
+      showToast("\u5df2\u590d\u5236\u5230\u526a\u8d34\u677f");
+      dom.shareOverlay.classList.remove("visible");
+    }).catch(function() { fallbackCopy(text); });
+  } else {
+    fallbackCopy(text);
+  }
+}
+
+function fallbackCopy(text) {
+  var ta = document.createElement("textarea");
+  ta.value = text;
+  ta.style.position = "fixed";
+  ta.style.left = "-9999px";
+  document.body.appendChild(ta);
+  ta.select();
+  document.execCommand("copy");
+  document.body.removeChild(ta);
+  showToast("\u5df2\u590d\u5236\u5230\u526a\u8d34\u677f");
+  dom.shareOverlay.classList.remove("visible");
+}
+
+// ===== 滑动切换章节 =====
+function setupSwipeNavigation() {
+  document.addEventListener("touchstart", function(e) {
+    state.touchStartX = e.changedTouches[0].screenX;
+    state.touchStartY = e.changedTouches[0].screenY;
+  }, { passive: true });
+  document.addEventListener("touchend", function(e) {
+    if (state.currentView !== "reading") return;
+    var dx = e.changedTouches[0].screenX - state.touchStartX;
+    var dy = e.changedTouches[0].screenY - state.touchStartY;
+    if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy)) return;
+    navigateChapter(dx > 0 ? -1 : 1);
+  }, { passive: true });
+}
+
+// ===== 经文笔记 =====
+function getNotes() {
+  try { return JSON.parse(localStorage.getItem("bible_notes") || "[]"); }
+  catch(e) { return []; }
+}
+
+function addNoteForVerse() {
+  if (state.selectedVerses.length === 0) {
+    showToast("\u8bf7\u5148\u9009\u62e9\u7ecf\u6587");
+    return;
+  }
+  var book = BIBLE_BOOKS.find(function(b) { return b.id === state.selectedVerses[0].book; });
+  var bookName = book ? book.shortName : "";
+  var ref = bookName + " " + state.selectedVerses[0].chapter + ":" + state.selectedVerses[0].verse;
+  if (state.selectedVerses.length > 1) {
+    ref += "-" + state.selectedVerses[state.selectedVerses.length - 1].verse;
+  }
+  var note = prompt("\u4e3a " + ref + " \u6dfb\u52a0\u7b14\u8bb0\uff1a", "");
+  if (!note || !note.trim()) return;
+  var notes = getNotes();
+  notes.unshift({ ref: ref, content: note.trim(), time: Date.now() });
+  localStorage.setItem("bible_notes", JSON.stringify(notes));
+  showToast("\u7b14\u8bb0\u5df2\u4fdd\u5b58");
+  clearSelection();
+}
+
+function renderNotes() {
+  var notes = getNotes();
+  if (notes.length === 0) {
+    dom.notesContainer.innerHTML = '<div class="note-empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg><p>\u8fd8\u6ca1\u6709\u7b14\u8bb0</p></div>';
+    return;
+  }
+  var html = "";
+  notes.forEach(function(n, i) {
+    var d = new Date(n.time);
+    html += '<div class="note-item">' +
+      '<div class="note-ref">' + escapeHtml(n.ref) + '</div>' +
+      '<div class="note-content">' + escapeHtml(n.content) + '</div>' +
+      '<div class="note-time">' + d.toLocaleDateString("zh-CN") + '</div>' +
+      '<div class="note-actions">' +
+      '<button onclick="deleteNote(' + i + ')">\u5220\u9664</button>' +
+      '</div></div>';
+  });
+  dom.notesContainer.innerHTML = html;
+}
+
+function deleteNote(index) {
+  var notes = getNotes();
+  notes.splice(index, 1);
+  localStorage.setItem("bible_notes", JSON.stringify(notes));
+  renderNotes();
+  showToast("\u7b14\u8bb0\u5df2\u5220\u9664");
+}
+// ===== 书签列表渲染 =====
+function renderBookmarks() {
+  var bookmarks = getBookmarks();
+  if (bookmarks.length === 0) {
+    dom.bookmarksContainer.innerHTML = '<div class="bookmark-empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg><p>还没有收藏的经文</p><p style="font-size:0.8rem">在阅读时长按或点击经文即可收藏</p></div>';
+    return;
+  }
+  var html = "";
+  bookmarks.forEach(function(b, i) {
+    var book = BIBLE_BOOKS.find(function(bk) { return bk.id === b.book; });
+    var bookName = book ? book.shortName : "";
+    html += '<div class="bookmark-item" data-book="' + b.book + '" data-chapter="' + b.chapter + '" data-verse="' + b.verse + '">' +
+      '<span class="bookmark-ref">' + bookName + ' ' + b.chapter + ':' + b.verse + '</span>' +
+      '<span class="bookmark-text">' + escapeHtml(b.text) + '</span>' +
+      '<button class="bookmark-delete" data-index="' + i + '" title="删除">' +
+      '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' +
+      '</button></div>';
+  });
+  dom.bookmarksContainer.innerHTML = html;
+  dom.bookmarksContainer.querySelectorAll(".bookmark-item").forEach(function(el) {
+    el.addEventListener("click", function(e) {
+      if (e.target.closest(".bookmark-delete")) return;
+      state.selectedBook = el.dataset.book;
+      state.selectedChapter = parseInt(el.dataset.chapter);
+      loadChapter(state.selectedBook, state.selectedChapter);
+      showView("reading");
+    });
+  });
+  dom.bookmarksContainer.querySelectorAll(".bookmark-delete").forEach(function(btn) {
+    btn.addEventListener("click", function(e) {
+      e.stopPropagation();
+      var idx = parseInt(btn.dataset.index);
+      var bookmarks = getBookmarks();
+      bookmarks.splice(idx, 1);
+      localStorage.setItem("bible_bookmarks", JSON.stringify(bookmarks));
+      renderBookmarks();
+      showToast("已删除");
+    });
+  });
+}
