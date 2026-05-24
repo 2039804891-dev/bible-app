@@ -15,7 +15,6 @@ var state = {
   aiContextRef: "",
   touchStartX: 0,
   touchStartY: 0,
-  aiContextRef: ""
 };
 
 // ===== DOM 工具 =====
@@ -28,6 +27,7 @@ var dom = {
   topSubtitle: $("#topSubtitle"),
   btnBack: $("#btnBack"),
   btnSettings: $("#btnSettings"),
+  btnSearch: $("#btnSearch"),
   viewBooks: $("#viewBooks"),
   viewChapters: $("#viewChapters"),
   viewReading: $("#viewReading"),
@@ -66,6 +66,12 @@ var dom = {
   viewHistory: $("#viewHistory"),
   notesContainer: $("#notesContainer"),
   historyContainer: $("#historyContainer"),
+  themeToggle: $("#themeToggle"),
+  viewSearch: $("#viewSearch"),
+  searchInput: $("#searchInput"),
+  searchClear: $("#searchClear"),
+  searchResults: $("#searchResults"),
+  viewBookmarks: $("#viewBookmarks"),
   shareOverlay: $("#shareOverlay"),
   shareVerseText: $("#shareVerseText"),
   shareVerseRef: $("#shareVerseRef"),
@@ -122,6 +128,8 @@ function showView(viewName, pushHistory) {
   dom.viewSettings.classList.toggle("active", viewName === "settings");
   dom.viewNotes.classList.toggle("active", viewName === "notes");
   dom.viewHistory.classList.toggle("active", viewName === "history");
+  dom.viewBookmarks.classList.toggle("active", viewName === "bookmarks");
+  dom.viewSearch.classList.toggle("active", viewName === "search");
 
   // Hide bottom bar on AI chat view
   dom.bottomBar.classList.toggle("hidden", viewName === "aiChat");
@@ -149,6 +157,8 @@ function goBack() {
   dom.viewSettings.classList.toggle("active", prev.view === "settings");
   dom.viewNotes.classList.toggle("active", prev.view === "notes");
   dom.viewHistory.classList.toggle("active", prev.view === "history");
+  dom.viewBookmarks.classList.toggle("active", prev.view === "bookmarks");
+  dom.viewSearch.classList.toggle("active", prev.view === "search");
 
   dom.bottomBar.classList.toggle("hidden", prev.view === "aiChat");
   dom.mainContent.classList.toggle("no-bottom", prev.view === "aiChat");
@@ -323,6 +333,7 @@ function loadChapter(bookId, chapter) {
   saveReadingPosition(bookId, chapter);
   saveReadingHistory(bookId, chapter);
   updateReadingStreak();
+  renderStreakBanner();
 
   // Load from local data/ directory first, fall back to bolls.life API
   fetch('/data/' + bookId + '.json').then(function(resp) {
@@ -500,7 +511,7 @@ function callDeepSeek(systemPrompt, userMessage) {
         { role: "user", content: userMessage },
       ],
       temperature: 0.7,
-      max_tokens: 2000,
+      max_tokens: 4000,
     }),
   }).then(function(resp) {
     if (!resp.ok) {
@@ -719,10 +730,94 @@ function stripTags(text) {
   return text.replace(/<[^>]+>/g, "");
 }
 
+// ===== 主题切换 =====
+function toggleTheme() {
+  var html = document.documentElement;
+  var current = html.getAttribute('data-theme') || 'light';
+  var next = current === 'light' ? 'dark' : 'light';
+  html.setAttribute('data-theme', next);
+  localStorage.setItem('bible_theme', next);
+}
+
+function loadTheme() {
+  var saved = localStorage.getItem('bible_theme') || 'light';
+  document.documentElement.setAttribute('data-theme', saved);
+}
+
 function escapeHtml(text) {
   var div = document.createElement("div");
   div.textContent = text;
   return div.innerHTML;
+}
+
+// ===== 全文搜索 =====
+function performSearch(query) {
+  if (!query || query.length < 2) {
+    dom.searchResults.innerHTML = '<div class="search-empty">输入关键词搜索全本圣经</div>';
+    return;
+  }
+  var q = query.toLowerCase();
+  var results = [];
+  var pending = 0;
+  BIBLE_BOOKS.forEach(function(book) {
+    pending++;
+    fetch('/data/' + book.id + '.json').then(function(resp) {
+      if (!resp.ok) return;
+      return resp.json();
+    }).then(function(data) {
+      if (!data || !data.chapters) return;
+      Object.keys(data.chapters).forEach(function(chKey) {
+        var verses = data.chapters[chKey];
+        verses.forEach(function(v) {
+          if (v.text && v.text.toLowerCase().indexOf(q) !== -1) {
+            results.push({
+              bookId: book.id,
+              bookName: book.name,
+              chapter: parseInt(chKey),
+              verse: v.verse,
+              text: v.text
+            });
+          }
+        });
+      });
+    }).catch(function() {}).finally(function() {
+      pending--;
+      if (pending === 0) renderSearchResults(results, query);
+    });
+  });
+}
+
+function renderSearchResults(results, query) {
+  if (results.length === 0) {
+    dom.searchResults.innerHTML = '<div class="search-empty">未找到包含 "' + escapeHtml(query) + '" 的经文</div>';
+    return;
+  }
+  var grouped = {};
+  results.forEach(function(r) {
+    var key = r.bookName;
+    if (!grouped[key]) grouped[key] = [];
+    grouped[key].push(r);
+  });
+  var html = '<div class="search-result-count">找到 ' + results.length + ' 条结果</div>';
+  Object.keys(grouped).forEach(function(bookName) {
+    html += '<div class="search-book-group"><div class="search-book-name">' + bookName + '</div>';
+    grouped[bookName].forEach(function(r) {
+      var escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\
+// ===== 事件绑定 =====');
+      var highlighted = r.text.replace(new RegExp('(' + escaped + ')', 'gi'), '<mark>$1</mark>');
+      html += '<div class="search-result-item" onclick="navigateToVerse(\'' + r.bookId + '\',' + r.chapter + ',' + r.verse + ')">' +
+        '<span class="search-result-ref">' + r.bookName + ' ' + r.chapter + ':' + r.verse + '</span>' +
+        '<span class="search-result-text">' + highlighted + '</span></div>';
+    });
+    html += '</div>';
+  });
+  dom.searchResults.innerHTML = html;
+}
+
+function navigateToVerse(bookId, chapter, verse) {
+  state.selectedBook = BIBLE_BOOKS.find(function(b) { return b.id === bookId; });
+  if (!state.selectedBook) return;
+  loadChapter(bookId, chapter);
 }
 
 // ===== 事件绑定 =====
@@ -737,6 +832,10 @@ function setupEventListeners() {
   });
 
   dom.btnSettings.addEventListener("click", function() { showView("settings"); });
+  dom.themeToggle.addEventListener("click", toggleTheme);
+
+  // Search button
+  dom.btnSearch.addEventListener("click", function() { showView("search"); dom.searchInput.focus(); });
 
   dom.bottomBookmarks.addEventListener("click", function() {
     clearSelection();
@@ -792,6 +891,10 @@ function setupEventListeners() {
   });
 
   dom.btnSaveApiKey.addEventListener("click", saveApiKey);
+
+  // Search
+  dom.searchInput.addEventListener("input", function() { performSearch(this.value.trim()); });
+  dom.searchClear.addEventListener("click", function() { dom.searchInput.value = ""; performSearch(""); dom.searchInput.focus(); });
 
   // Reading progress tracking
   document.querySelector(".main-content").addEventListener("scroll", updateReadingProgress, { passive: true });
