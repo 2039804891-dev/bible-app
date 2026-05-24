@@ -802,7 +802,7 @@ function renderSearchResults(results, query) {
   Object.keys(grouped).forEach(function(bookName) {
     html += '<div class="search-book-group"><div class="search-book-name">' + bookName + '</div>';
     grouped[bookName].forEach(function(r) {
-      var escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\
+      var escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 // ===== 事件绑定 =====');
       var highlighted = r.text.replace(new RegExp('(' + escaped + ')', 'gi'), '<mark>$1</mark>');
       html += '<div class="search-result-item" onclick="navigateToVerse(\'' + r.bookId + '\',' + r.chapter + ',' + r.verse + ')">' +
