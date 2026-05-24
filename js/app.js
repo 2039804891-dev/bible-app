@@ -13,6 +13,7 @@ var state = {
   apiKey: "",
   fontSize: 1,
   aiContextRef: "",
+  searchKeyword: "",
   touchStartX: 0,
   touchStartY: 0,
 };
@@ -393,7 +394,12 @@ function renderVerses(data, book) {
   data.verses.forEach(function(v) {
     html += '<div class="verse-block">';
     html += '<span class="verse-num">' + v.verse + '</span>';
-    html += '<span class="verse-text" data-verse="' + v.verse + '" data-book="' + book.id + '" data-chapter="' + v.chapter + '">' + escapeHtml(v.text) + '</span>';
+    var t = escapeHtml(v.text);
+    if (state.searchKeyword) {
+      var ek = state.searchKeyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      t = t.replace(new RegExp('(' + ek + ')', 'gi'), '<mark>$1</mark>');
+    }
+    html += '<span class="verse-text" data-verse="' + v.verse + '" data-book="' + book.id + '" data-chapter="' + v.chapter + '">' + t + '</span>';
     html += '</div>';
   });
   dom.versesContainer.innerHTML = html;
@@ -404,6 +410,10 @@ function renderVerses(data, book) {
       toggleVerseSelection(el);
     });
   });
+  if (state.searchKeyword) {
+    var m = dom.versesContainer.querySelector("mark");
+    if (m) setTimeout(function() { m.scrollIntoView({ behavior: "smooth", block: "center" }); }, 500);
+  }
 }
 
 function renderChapterNav(book, chapter) {
@@ -752,6 +762,7 @@ function escapeHtml(text) {
 
 // ===== 全文搜索 =====
 function performSearch(query) {
+  state.searchKeyword = query;
   if (!query || query.length < 2) {
     dom.searchResults.innerHTML = '<div class="search-empty">输入关键词搜索全本圣经</div>';
     return;

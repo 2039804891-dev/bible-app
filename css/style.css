@@ -797,6 +797,12 @@ body {
 }
 
 /* ===== 搜索视图 ===== */
+/* 搜索/设置激活时隐藏 main-content，避免空间平分 */
+body:has(#viewSearch.active) > .main-content,
+body:has(#viewSettings.active) > .main-content {
+  display: none;
+}
+
 /* ===== 搜索视图激活 ===== */
 #viewSearch.active {
   display: flex;
