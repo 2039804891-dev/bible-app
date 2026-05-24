@@ -770,8 +770,8 @@ function setupEventListeners() {
   });
 
   dom.btnAiExplainSelected.addEventListener("click", explainSelectedVerses);
-  dom.btnAiExplainChapter.addEventListener("click", explainChapter);
-  dom.btnAiCustomQuestion.addEventListener("click", openCustomQuestion);
+  if (dom.btnAiExplainChapter) dom.btnAiExplainChapter.addEventListener("click", explainChapter);
+  if (dom.btnAiCustomQuestion) dom.btnAiCustomQuestion.addEventListener("click", openCustomQuestion);
   dom.btnClearSelection.addEventListener("click", clearSelection);
 
 
