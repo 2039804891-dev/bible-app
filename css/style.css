@@ -301,18 +301,18 @@ body {
 /* ===== ÈòÖËØªËßÜÂõæ ===== */
 .reading-header {
   text-align: center;
-  padding: 8px 0 20px;
+  padding: 4px 0 10px;
 }
 
 .reading-header h2 {
-  font-size: 1.3rem;
+  font-size: 1.1rem;
   font-weight: 700;
   color: var(--primary);
   margin-bottom: 4px;
 }
 
 .reading-header .chapter-label {
-  font-size: 0.9rem;
+  font-size: 0.82rem;
   color: var(--text-secondary);
 }
 
@@ -369,19 +369,19 @@ body {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 16px 0;
+  padding: 8px 0;
 }
 
 .btn-ai-chapter {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 14px 28px;
+  gap: 6px;
+  padding: 8px 16px;
   background: linear-gradient(135deg, #2E5A88, #3A6FA0);
   color: #FFF;
   border: none;
   border-radius: 24px;
-  font-size: 1rem;
+  font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
   box-shadow: 0 2px 8px rgba(46,90,136,0.3);
@@ -397,20 +397,20 @@ body {
 }
 
 .btn-ai-chapter svg {
-  width: 20px;
-  height: 20px;
+  width: 16px;
+  height: 16px;
 }
 
 .btn-nav {
-  padding: 12px 24px;
+  padding: 7px 16px;
   background: var(--primary);
   color: #FFF;
   border: none;
   border-radius: var(--radius);
-  font-size: 0.95rem;
+  font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
-  min-height: 48px;
+  min-height: 36px;
   transition: background 0.15s;
   white-space: nowrap;
   touch-action: manipulation;
@@ -426,8 +426,8 @@ body {
 }
 
 .chapter-indicator {
-  padding: 8px 16px;
-  font-size: 0.9rem;
+  padding: 4px 10px;
+  font-size: 0.82rem;
   color: var(--text-secondary);
   font-weight: 500;
   white-space: nowrap;
@@ -906,6 +906,30 @@ body {
   justify-content: center;
   gap: 10px;
   padding: 4px 0 8px;
+}
+/* ===== ‘ƒ∂¡≤Ÿ◊˜∞¥≈• ===== */
+.btn-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s;
+  touch-action: manipulation;
+}
+.btn-action:active {
+  background: var(--primary-light);
+  border-color: var(--primary);
+  color: var(--primary);
+}
+.btn-action svg {
+  width: 16px;
+  height: 16px;
 }
 
 /* ===== ÊªëÂä®ÊèêÁ§∫ ===== */

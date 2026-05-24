@@ -403,7 +403,7 @@ function renderChapterNav(book, chapter) {
     '<span class="chapter-indicator">' + chapter + " / " + book.chapters + '</span>' +
     '<button class="btn-nav" onclick="navigateChapter(1)"' + (hasNext ? "" : " disabled") + '>\u4e0b\u4e00\u7ae0 \u25b6</button>' +
     '</div>';
-  var aiBtnHtml = '<div style="text-align:center;padding:8px 0 0">' +
+  var aiBtnHtml = '<div style="text-align:center;padding:4px 0 0">' +
     '<button class="btn-ai-chapter" id="btnAiChapterPersistent" onclick="explainChapter()">' +
     '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>' +
     " AI\u7267\u5e08\u8bb2\u89e3\u672c\u7ae0" +
@@ -413,13 +413,13 @@ function renderChapterNav(book, chapter) {
   // Update reading actions row
   dom.readingActionsRow.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;gap:12px">' +
     '<button class="btn-action" onclick="shareSelectedVerses()" title="分享">' +
-    '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>' +
+    '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>' +
     '</button>' +
     '<button class="btn-action" onclick="addNoteForVerse()" title="笔记">' +
-    '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>' +
+    '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>' +
     '</button>' +
     '<button class="btn-action" id="btnBookmarkSelectedReading" onclick="bookmarkSelectedVerses()" title="收藏">' +
-    '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>' +
+    '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>' +
     '</button></div>';
 }
 
