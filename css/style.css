@@ -1,4 +1,4 @@
-﻿/* ===== CSS 变量与基础 ===== */
+/* ===== CSS 变量与基础 ===== */
 :root {
   --bg: #FFFDF7;
   --bg-card: #FFFFFF;
@@ -19,6 +19,7 @@
   --max-width: 720px;
   --nav-height: 56px;
   --input-min: 16px;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 *, *::before, *::after {
@@ -30,6 +31,9 @@
 html {
   font-size: calc(var(--font-size) * var(--font-scale));
   -webkit-text-size-adjust: 100%;
+  /* 彻底禁用缩放 */
+  touch-action: manipulation;
+  -ms-touch-action: manipulation;
 }
 
 body {
@@ -40,23 +44,41 @@ body {
   min-height: 100vh;
   min-height: 100dvh;
   -webkit-font-smoothing: antialiased;
+  /* APP 级防护 */
   overflow-x: hidden;
+  overflow-y: auto;
   overscroll-behavior: contain;
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+  /* 禁止 iOS 橡皮筋效果 */
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 /* ===== 顶部导航 ===== */
 .top-bar {
-  position: sticky;
-  top: 0;
+  position: relative;
   z-index: 100;
   background: var(--bg);
   border-bottom: 1px solid var(--border);
   padding: 0 16px;
-  height: var(--nav-height);
+  padding-top: env(safe-area-inset-top, 0px);
+  min-height: var(--nav-height);
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+  flex-shrink: 0;
 }
 
 .top-bar-title {
@@ -89,6 +111,7 @@ body {
   cursor: pointer;
   transition: background 0.15s;
   flex-shrink: 0;
+  touch-action: manipulation;
 }
 
 .btn-icon:hover, .btn-icon:active {
@@ -102,10 +125,14 @@ body {
 
 /* ===== 主内容区 ===== */
 .main-content {
-  max-width: var(--max-width);
-  margin: 0 auto;
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
   padding: 16px;
-  padding-bottom: 80px;
+  padding-bottom: calc(80px + var(--safe-bottom));
 }
 
 .main-content.no-bottom {
@@ -138,13 +165,13 @@ body {
   transition: all 0.2s;
   box-shadow: 0 2px 8px rgba(107,66,38,0.12);
   min-height: 56px;
+  touch-action: manipulation;
 }
 
-.continue-reading-card:hover, .continue-reading-card:active {
+.continue-reading-card:active {
   background: linear-gradient(135deg, #EDD8BC, #FFF0D4);
   border-color: #B8864C;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 14px rgba(107,66,38,0.18);
+  transform: scale(0.98);
 }
 
 .continue-icon {
@@ -184,21 +211,22 @@ body {
   padding: 12px 8px 8px;
   border-bottom: 1px solid var(--border);
   margin-bottom: 8px;
-  text-transform: uppercase;
   letter-spacing: 0.05em;
 }
 
 .book-list {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  grid-template-columns: repeat(2, 1fr);
   gap: 6px;
+  max-width: 100%;
+  overflow: hidden;
 }
 
 .book-btn {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 14px 16px;
+  padding: 14px 12px;
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -209,27 +237,30 @@ body {
   text-align: left;
   min-height: 52px;
   box-shadow: var(--shadow);
-  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 
-.book-btn:hover, .book-btn:active {
+.book-btn:active {
   background: var(--primary-light);
   border-color: var(--primary);
 }
 
 .book-btn .book-name {
   font-weight: 500;
+  font-size: 0.95rem;
 }
 
 .book-btn .book-chapters {
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   color: var(--text-secondary);
+  flex-shrink: 0;
+  margin-left: 4px;
 }
 
 /* ===== 章节网格 ===== */
 .chapter-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(56px, 1fr));
+  grid-template-columns: repeat(5, 1fr);
   gap: 8px;
   padding: 4px 0;
 }
@@ -238,21 +269,21 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 14px 4px;
+  padding: 12px 4px;
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   cursor: pointer;
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-weight: 500;
   color: var(--text);
   transition: all 0.15s;
-  min-height: 52px;
+  min-height: 48px;
   box-shadow: var(--shadow);
-  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 
-.chapter-btn:hover, .chapter-btn:active {
+.chapter-btn:active {
   background: var(--primary-light);
   border-color: var(--primary);
   color: var(--primary);
@@ -276,8 +307,11 @@ body {
   color: var(--text-secondary);
 }
 
+/* 经文区域允许选中 */
 .verses-container {
   padding: 8px 0;
+  -webkit-user-select: text;
+  user-select: text;
 }
 
 .verse-block {
@@ -296,6 +330,7 @@ body {
   text-align: right;
   padding-top: 3px;
   flex-shrink: 0;
+  -webkit-user-select: none;
   user-select: none;
 }
 
@@ -306,10 +341,10 @@ body {
   padding: 2px 6px;
   margin: -2px -6px;
   transition: background 0.15s;
-  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 
-.verse-text:hover {
+.verse-text:active {
   background: var(--primary-light);
 }
 
@@ -343,12 +378,13 @@ body {
   box-shadow: 0 2px 8px rgba(46,90,136,0.3);
   transition: all 0.2s;
   letter-spacing: 0.03em;
+  touch-action: manipulation;
 }
 
-.btn-ai-chapter:hover, .btn-ai-chapter:active {
+.btn-ai-chapter:active {
   background: linear-gradient(135deg, #1E4A78, #2A5A88);
   box-shadow: 0 4px 14px rgba(46,90,136,0.4);
-  transform: translateY(-1px);
+  transform: scale(0.97);
 }
 
 .btn-ai-chapter svg {
@@ -368,15 +404,16 @@ body {
   min-height: 48px;
   transition: background 0.15s;
   white-space: nowrap;
+  touch-action: manipulation;
 }
 
-.btn-nav:hover, .btn-nav:active {
+.btn-nav:active {
   background: var(--primary-hover);
 }
 
 .btn-nav:disabled {
   opacity: 0.4;
-  cursor: not-allowed;
+  pointer-events: none;
 }
 
 .chapter-indicator {
@@ -391,8 +428,7 @@ body {
 #viewAiChat {
   display: none;
   flex-direction: column;
-  height: calc(100vh - var(--nav-height) - 56px);
-  height: calc(100dvh - var(--nav-height) - 56px);
+  flex: 1;
 }
 
 #viewAiChat.active {
@@ -402,11 +438,13 @@ body {
 .ai-chat-area {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 16px;
   display: flex;
   flex-direction: column;
   gap: 12px;
   -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
 }
 
 .ai-message {
@@ -414,8 +452,10 @@ body {
   border-radius: var(--radius);
   font-size: 0.95rem;
   line-height: 1.7;
-  max-width: 90%;
+  max-width: 88%;
   word-break: break-word;
+  -webkit-user-select: text;
+  user-select: text;
 }
 
 .ai-message.user {
@@ -436,8 +476,10 @@ body {
   display: flex;
   gap: 8px;
   padding: 12px 16px;
+  padding-bottom: calc(12px + var(--safe-bottom));
   border-top: 1px solid var(--border);
   background: var(--bg-card);
+  flex-shrink: 0;
 }
 
 .ai-input-row textarea {
@@ -453,6 +495,7 @@ body {
   background: var(--bg);
   color: var(--text);
   -webkit-appearance: none;
+  touch-action: manipulation;
 }
 
 .ai-input-row textarea:focus {
@@ -472,21 +515,22 @@ body {
   min-height: 48px;
   white-space: nowrap;
   transition: background 0.15s;
+  touch-action: manipulation;
 }
 
-.btn-send:hover, .btn-send:active {
+.btn-send:active {
   background: #1E4A78;
 }
 
 .btn-send:disabled {
   opacity: 0.4;
-  cursor: not-allowed;
+  pointer-events: none;
 }
 
 /* ===== 选中经文的工具栏 ===== */
 .selection-toolbar {
   position: fixed;
-  bottom: 80px;
+  bottom: calc(72px + var(--safe-bottom));
   left: 50%;
   transform: translateX(-50%);
   background: var(--bg-card);
@@ -534,7 +578,7 @@ body {
   transition: background 0.15s, color 0.15s;
   min-height: 52px;
   border-right: 1px solid var(--border-light);
-  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 
 .btn-sel-action:last-child {
@@ -546,7 +590,7 @@ body {
   height: 20px;
 }
 
-.btn-sel-action:hover, .btn-sel-action:active {
+.btn-sel-action:active {
   background: var(--primary-light);
 }
 
@@ -556,7 +600,7 @@ body {
   background: var(--accent-light);
 }
 
-.btn-sel-action.primary:hover {
+.btn-sel-action.primary:active {
   background: #D0E4F4;
 }
 
@@ -588,22 +632,11 @@ body {
   border-bottom: 1px solid var(--border);
 }
 
-.setting-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 14px 0;
-  border-bottom: 1px solid var(--border-light);
-}
-
-.setting-label {
-  font-size: 1rem;
-  font-weight: 500;
-}
-
 .setting-desc {
   font-size: 0.85rem;
   color: var(--text-secondary);
+  -webkit-user-select: text;
+  user-select: text;
 }
 
 .input-text {
@@ -616,6 +649,7 @@ body {
   color: var(--text);
   font-family: monospace;
   -webkit-appearance: none;
+  touch-action: manipulation;
 }
 
 .input-text:focus {
@@ -640,6 +674,7 @@ body {
   min-height: 44px;
   min-width: 48px;
   text-align: center;
+  touch-action: manipulation;
 }
 
 .btn-font-size.active {
@@ -648,7 +683,7 @@ body {
   border-color: var(--primary);
 }
 
-.btn-font-size:hover:not(.active) {
+.btn-font-size:active:not(.active) {
   background: var(--primary-light);
 }
 
@@ -656,17 +691,17 @@ body {
 .bottom-bar {
   position: fixed;
   bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 100%;
-  max-width: var(--max-width);
+  left: 0;
+  right: 0;
   background: var(--bg-card);
   border-top: 1px solid var(--border);
   display: flex;
   justify-content: space-around;
   align-items: center;
   height: 56px;
+  padding-bottom: var(--safe-bottom);
   z-index: 100;
+  min-height: calc(56px + var(--safe-bottom));
 }
 
 .bottom-bar.hidden {
@@ -675,7 +710,7 @@ body {
 
 .bottom-btn {
   flex: 1;
-  height: 100%;
+  height: 56px;
   border: none;
   background: none;
   color: var(--text-secondary);
@@ -687,7 +722,7 @@ body {
   justify-content: center;
   gap: 2px;
   transition: color 0.15s;
-  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 
 .bottom-btn svg {
@@ -699,7 +734,7 @@ body {
   color: var(--primary);
 }
 
-.bottom-btn:hover {
+.bottom-btn:active {
   color: var(--primary);
 }
 
@@ -735,17 +770,14 @@ body {
   font-size: 1rem;
 }
 
-.empty-msg {
-  text-align: center;
-  padding: 40px 16px;
-  color: var(--text-secondary);
-  font-size: 0.95rem;
+.error-msg .btn-nav {
+  margin-top: 12px;
 }
 
 /* ===== 提示消息 ===== */
 .toast {
   position: fixed;
-  top: 16px;
+  top: calc(16px + env(safe-area-inset-top, 0px));
   left: 50%;
   transform: translateX(-50%);
   background: #333;
@@ -761,36 +793,4 @@ body {
 
 .toast.show {
   opacity: 1;
-}
-
-/* ===== 响应式 ===== */
-@media (max-width: 480px) {
-  .book-list {
-    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
-  }
-
-  .chapter-grid {
-    grid-template-columns: repeat(auto-fill, minmax(48px, 1fr));
-  }
-
-  .verse-num {
-    min-width: 24px;
-    font-size: 0.7rem;
-  }
-
-  .selection-toolbar {
-    bottom: 72px;
-    border-radius: var(--radius) var(--radius) 0 0;
-  }
-
-  .btn-sel-action {
-    padding: 14px 4px;
-    min-height: 56px;
-    font-size: 0.8rem;
-  }
-
-  .btn-sel-action svg {
-    width: 22px;
-    height: 22px;
-  }
 }
