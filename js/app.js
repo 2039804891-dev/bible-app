@@ -817,6 +817,7 @@ function renderSearchResults(results, query) {
 function navigateToVerse(bookId, chapter, verse) {
   state.selectedBook = BIBLE_BOOKS.find(function(b) { return b.id === bookId; });
   if (!state.selectedBook) return;
+  state.selectedChapter = chapter;
   showView("reading");
   loadChapter(bookId, chapter);
 }
