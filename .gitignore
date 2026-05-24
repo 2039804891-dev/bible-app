@@ -3,3 +3,6 @@ www/
 .vercel/
 __pycache__/
 *.pyc
+
+build/
+js/app_part*.js
