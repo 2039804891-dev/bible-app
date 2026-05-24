@@ -1,0 +1,16 @@
+{
+    "dependencies": {
+        "isomorphic-git": "^1.38.1",
+        "vercel": "^54.4.1"
+    },
+    "devDependencies": {
+        "@capacitor/android": "^8.3.4",
+        "@capacitor/cli": "^8.3.4",
+        "@capacitor/core": "^8.3.4"
+    },
+    "scripts": {
+        "cap-sync": "npx cap sync android",
+        "fetch-data": "node scripts/fetch-bible.js",
+        "dev": "npx serve . -p 3000 --no-clipboard"
+    }
+}

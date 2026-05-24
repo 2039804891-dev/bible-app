@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">圣经和合本</string>
+    <string name="title_activity_main">圣经和合本</string>
+    <string name="package_name">com.bible.union</string>
+    <string name="custom_url_scheme">com.bible.union</string>
+</resources>

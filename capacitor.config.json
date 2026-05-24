@@ -1,0 +1,6 @@
+{
+  "appId": "com.bible.union",
+  "appName": "圣经和合本",
+  "webDir": "www",
+  "bundledWebRuntime": false
+}
