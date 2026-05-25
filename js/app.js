@@ -690,7 +690,14 @@ function addAiMessage(role, content) {
   div.className = "ai-message " + role;
   div.innerHTML = content.replace(/\n/g, "<br>");
   dom.aiChatArea.appendChild(div);
-  dom.aiChatArea.scrollTop = dom.aiChatArea.scrollHeight;
+  // AI回复滚到消息开头；其他滚到底部
+  if (role === "ai") {
+    requestAnimationFrame(function() {
+      dom.aiChatArea.scrollTop = div.offsetTop - 16;
+    });
+  } else {
+    dom.aiChatArea.scrollTop = dom.aiChatArea.scrollHeight;
+  }
 }
 
 // ===== 设置 =====
